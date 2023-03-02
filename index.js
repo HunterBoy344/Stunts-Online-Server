@@ -12,6 +12,7 @@ let warningTimer = warningTimerDefault
 const wss = new WebSocket.Server({ port: 8080 })
 let ws
 let players = []
+let chatlog = [];
 let currentID = 1
 
 fs.readdir('./tracks/', (err, files) => {
@@ -40,6 +41,7 @@ wss.on('connection', (socket, req) => {
           return
         }
         ws.send(`{ "ID" : "${currentID}"}`)
+        ws.send(`{ "chat" : ${JSON.stringify(chatlog)} }`)
         players.push({username : responseJSON.username, time : 999999, IP : req.socket.remoteAddress, ID : currentID})
         currentID = currentID + 1
         sendTrack(ws)
@@ -100,6 +102,10 @@ wss.on('connection', (socket, req) => {
           }
         })
         updateLeaderboard()
+      }
+      if (Object.keys(responseJSON)[0] == 'message') {
+        chatlog.push(`${responseJSON.username}: ${responseJSON.message}`)
+        wss.broadcast(`{ "chat" : ${JSON.stringify(chatlog)} }`)
       }
     }
     // Continue as before.
